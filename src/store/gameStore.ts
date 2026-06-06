@@ -100,7 +100,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       state.collectPowerUp(cell);
       const newBoard = state.board.map((row) => [...row]);
       newBoard[pos.row][pos.col] = null;
-      set({ board: newBoard, isAnimating: true });
+      set({ board: newBoard });
       return;
     }
 
@@ -219,7 +219,6 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       powerUps: newPowerUps,
       activePowerUp: null,
       selectedCell: null,
-      isAnimating: true,
     });
   },
 
