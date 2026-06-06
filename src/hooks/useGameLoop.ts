@@ -1,6 +1,15 @@
 import { useCallback, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 
+function hasEmptyCells(board: (string | null)[][]): boolean {
+  for (const row of board) {
+    for (const cell of row) {
+      if (cell === null) return true;
+    }
+  }
+  return false;
+}
+
 export function useGameLoop() {
   const processingRef = useRef(false);
   const store = useGameStore();
@@ -11,6 +20,12 @@ export function useGameLoop() {
     store.setAnimating(true);
 
     await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const board = store.board;
+    if (hasEmptyCells(board)) {
+      store.dropGems();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
 
     let combo = 0;
     while (true) {
