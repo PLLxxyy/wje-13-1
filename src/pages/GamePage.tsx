@@ -3,6 +3,7 @@ import { useGameStore } from '@/store/gameStore';
 import GameBoard from '@/components/GameBoard';
 import GameHeader from '@/components/GameHeader';
 import GameOverlay from '@/components/GameOverlay';
+import PowerUpBar from '@/components/PowerUpBar';
 
 export default function GamePage() {
   const initGame = useGameStore((s) => s.initGame);
@@ -30,6 +31,7 @@ export default function GamePage() {
         <GameBoard />
         <GameOverlay />
       </div>
+      <PowerUpBar />
       <p className="mt-4 text-white/40 text-xs">
         点击相邻方块交换位置，三个以上同色连成一线即可消除
       </p>

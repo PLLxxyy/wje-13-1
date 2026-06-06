@@ -1,6 +1,8 @@
 export type GemColor = 'red' | 'blue' | 'green' | 'yellow' | 'purple';
 
-export type CellType = GemColor | 'stone' | null;
+export type PowerUpType = 'hammer' | 'rainbow' | 'shuffle' | 'extra_moves';
+
+export type CellType = GemColor | 'stone' | PowerUpType | null;
 
 export interface Position {
   row: number;
@@ -15,6 +17,13 @@ export interface Match {
   color: GemColor;
 }
 
+export interface PowerUpInventory {
+  hammer: number;
+  rainbow: number;
+  shuffle: number;
+  extra_moves: number;
+}
+
 export interface GameState {
   board: CellType[][];
   score: number;
@@ -25,4 +34,6 @@ export interface GameState {
   isAnimating: boolean;
   gameStatus: 'playing' | 'won' | 'lost';
   combo: number;
+  powerUps: PowerUpInventory;
+  activePowerUp: PowerUpType | null;
 }

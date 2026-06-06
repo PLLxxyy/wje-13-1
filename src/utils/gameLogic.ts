@@ -1,4 +1,4 @@
-import type { CellType, GemColor, Match, MatchType, Position } from '@/types/game';
+import type { CellType, GemColor, Match, MatchType, Position, PowerUpType } from '@/types/game';
 
 const COLORS: GemColor[] = ['red', 'blue', 'green', 'yellow', 'purple'];
 
@@ -51,7 +51,7 @@ export function findMatches(board: CellType[][]): Match[] {
     let c = 0;
     while (c < size) {
       const color = board[r][c];
-      if (!color || color === 'stone') {
+      if (!color || color === 'stone' || isPowerUp(color)) {
         c++;
         continue;
       }
@@ -75,7 +75,7 @@ export function findMatches(board: CellType[][]): Match[] {
     let r = 0;
     while (r < size) {
       const color = board[r][c];
-      if (!color || color === 'stone') {
+      if (!color || color === 'stone' || isPowerUp(color)) {
         r++;
         continue;
       }
@@ -177,7 +177,8 @@ export function dropGems(board: CellType[][]): CellType[][] {
       }
     }
     for (let r = writeRow; r >= 0; r--) {
-      newBoard[r][c] = randomGem();
+      const powerUp = randomPowerUp();
+      newBoard[r][c] = powerUp || randomGem();
     }
   }
 
@@ -210,14 +211,14 @@ export function hasPossibleMoves(board: CellType[][]): boolean {
   const size = board.length;
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      if (board[r][c] === 'stone') continue;
+      if (board[r][c] === 'stone' || isPowerUp(board[r][c])) continue;
       const neighbors = [
         { row: r + 1, col: c },
         { row: r, col: c + 1 },
       ];
       for (const n of neighbors) {
         if (n.row >= size || n.col >= size) continue;
-        if (board[n.row][n.col] === 'stone') continue;
+        if (board[n.row][n.col] === 'stone' || isPowerUp(board[n.row][n.col])) continue;
         const swapped = swapCells(board, { row: r, col: c }, n);
         const matches = findMatches(swapped);
         if (matches.length > 0) return true;
@@ -225,4 +226,97 @@ export function hasPossibleMoves(board: CellType[][]): boolean {
     }
   }
   return false;
+}
+
+const POWER_UP_TYPES: PowerUpType[] = ['hammer', 'rainbow', 'shuffle', 'extra_moves'];
+
+export function randomPowerUp(): PowerUpType | null {
+  if (Math.random() < 0.15) {
+    return POWER_UP_TYPES[Math.floor(Math.random() * POWER_UP_TYPES.length)];
+  }
+  return null;
+}
+
+export function applyPowerUpDrop(board: CellType[][], matches: Match[]): CellType[][] {
+  const newBoard = board.map((row) => [...row]);
+  for (const match of matches) {
+    const powerUp = randomPowerUp();
+    if (powerUp) {
+      const center = match.positions[Math.floor(match.positions.length / 2)];
+      if (newBoard[center.row][center.col] !== 'stone') {
+        newBoard[center.row][center.col] = powerUp;
+      }
+    }
+  }
+  return newBoard;
+}
+
+export function useHammer(board: CellType[][], pos: Position): CellType[][] {
+  const newBoard = board.map((row) => [...row]);
+  if (newBoard[pos.row][pos.col] !== 'stone') {
+    newBoard[pos.row][pos.col] = null;
+  }
+  return newBoard;
+}
+
+export function useRainbow(board: CellType[][]): CellType[][] {
+  const newBoard = board.map((row) => [...row]);
+  const size = board.length;
+  const targetColor = selectMostFrequentColor(board);
+  if (!targetColor) return newBoard;
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (newBoard[r][c] === targetColor) {
+        newBoard[r][c] = null;
+      }
+    }
+  }
+  return newBoard;
+}
+
+function selectMostFrequentColor(board: CellType[][]): GemColor | null {
+  const counts: Record<string, number> = {};
+  for (const row of board) {
+    for (const cell of row) {
+      if (cell && cell !== 'stone' && !POWER_UP_TYPES.includes(cell as PowerUpType)) {
+        counts[cell] = (counts[cell] || 0) + 1;
+      }
+    }
+  }
+  let maxColor: GemColor | null = null;
+  let maxCount = 0;
+  for (const [color, count] of Object.entries(counts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      maxColor = color as GemColor;
+    }
+  }
+  return maxColor;
+}
+
+export function useShuffle(board: CellType[][]): CellType[][] {
+  const size = board.length;
+  const gems: CellType[] = [];
+  const positions: Position[] = [];
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (board[r][c] !== 'stone') {
+        gems.push(board[r][c]);
+        positions.push({ row: r, col: c });
+      }
+    }
+  }
+  for (let i = gems.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [gems[i], gems[j]] = [gems[j], gems[i]];
+  }
+  const newBoard = board.map((row) => [...row]);
+  for (let i = 0; i < positions.length; i++) {
+    newBoard[positions[i].row][positions[i].col] = gems[i];
+  }
+  return newBoard;
+}
+
+export function isPowerUp(cell: CellType): cell is PowerUpType {
+  return cell !== null && cell !== 'stone' && !COLORS.includes(cell as GemColor);
 }
